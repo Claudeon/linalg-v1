@@ -28,6 +28,8 @@ class Rat(object):
         if self.den == 1:
             return str(self.num)
         return f'{self.num}/{self.den}'
+    def __repr__(self):
+        return str(self)
 
     def __add__(self, other):
         if isinstance(other, Rat):
@@ -62,7 +64,7 @@ class Mat(object):
     def __init__(self, rows, cols):
         self.rows = rows
         self.cols = cols
-        self.list = [[0]*self.cols for row in range(self.rows)]
+        self.list = [[Rat(0)]*self.cols for row in range(self.rows)]
     
     def get(self, row, col):
         return self.list[row][col]
@@ -101,9 +103,9 @@ class Mat(object):
             temp = Mat(self.rows, other.cols)
             for r in range(self.rows):
                 for c in range(other.cols):
-                    v = 0
+                    v = Rat(0)
                     for i in range(self.cols):
-                        val += self.get(r,i)*self.get(i,c)
+                        v += self.get(r,i)*self.get(i,c)
                     temp.set(v, r, c)
             return temp
         else:
@@ -145,3 +147,5 @@ class Matrix(Mat):
                 repeat = False
             if is_break:
                 break
+
+
