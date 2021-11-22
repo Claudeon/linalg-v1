@@ -38,6 +38,8 @@ class Rat(object):
             return (self.num == other.num) and (self.den == other.den)
         elif isinstance(other, int):
             return self == Rat(other)
+        elif isinstance(other, float):
+            return self.num/self.den == other
         else:
             raise TypeError("other of unknown type")
 
@@ -46,6 +48,8 @@ class Rat(object):
             return Rat(self.num*other.den + self.den*other.num, self.den*other.den)
         elif isinstance(other, int):
             return Rat(self.num + self.den*other, self.den)
+        elif isinstance(other, float):
+            return self.num/self.den + other
         else:
             raise TypeError("other of unknown type")
     def __mul__(self, other):
@@ -53,6 +57,8 @@ class Rat(object):
             return Rat(self.num*other.num, self.den*other.den)
         elif isinstance(other, int):
             return Rat(self.num*other, self.den)
+        elif isinstance(other, float):
+            return self.num/self.den * other
         else:
             raise TypeError("other of unknown type")
     def __sub__(self, other):
@@ -62,6 +68,8 @@ class Rat(object):
             return Rat(self.num*other.den, self.den*other.num)
         elif isinstance(other, int):
             return Rat(self.num, self.den*other)
+        elif isinstance(other, float):
+            return (self.num/self.den) / other
         else:
             raise TypeError("other of unknown type")
             
@@ -72,7 +80,10 @@ BREAK_CMD   = "break"
 ZERO, ONE   = Rat(0), Rat(1)
 DEBUGMODE   = False
 
-class Mat(object):
+class RealMatrix(object):
+    pass
+
+class RatMatrix(RealMatrix):
     def __init__(self, rows, cols):
         self.rows = rows
         self.cols = cols
@@ -102,33 +113,76 @@ class Mat(object):
         return txt
 
     def copy(self):
-        temp = Mat(self.rows, self.cols)
+        temp = zeros(self.rows, self.cols)
         for row in range(self.rows):
             for col in range(self.cols):
                 temp[row][col] = self[row][col]
         return temp
     # transpose matrix
     def T(self):
-        temp = Mat(self.cols, self.rows)
+        temp = zeros(self.cols, self.rows)
         for row in range(self.rows):
             for col in range(self.cols):
                 temp[col][row] = self[row][col]
+        return temp
+
+    def combine(self, other, vert = False):
+        row1, col1 = self.rows, self.cols
+        row2, col2 = other.rows, other.cols
+        if vert == False:
+            if row1 != row2:
+                raise ValueError("Matrix sizes do not match")
+            temp = zeros(row1, col1 + col2)
+            rowsize, colsize = temp.rows, temp.cols
+            for r in range(rowsize):
+                for c in range(colsize):
+                    if c < col1:
+                        temp[r][c] = self[r][c]
+                    else:
+                        temp[r][c] = other[r][c-col1]
+        elif vert == True:
+            if col1 != col2:
+                raise ValueError("Matrix sizes do not match")
+            temp = zeros(row1 + row2, col1)
+            rowsize, colsize = temp.rows, temp.cols
+            for r in range(rowsize):
+                for c in range(colsize):
+                    if r < row1:
+                        temp[r][c] = self[r][c]
+                    else:
+                        temp[r][c] = other[r-row1][c]
+        return temp
+    def slice(self, start, end, vert = True):
+        if vert == True:
+            rows, cols = self.rows, end - start
+            temp = zeros(rows, cols)
+            for r in range(rows):
+                for c in range(cols):
+                    # print('temp',(r,c))
+                    # print('matr',(r,c + start))
+                    temp[r][c] = self[r][c+start]
+        elif vert == False:
+            rows, cols = end - start, self.cols
+            temp = zeros(rows, cols)
+            for r in range(rows):
+                for c in range(cols):
+                    temp[r][c] = self[r+start][c]
         return temp
 
         
     def __add__(self, other):
         if self.rows != other.rows or self.cols != other.rows:
             return
-        temp = Mat(self.rows, self.cols)
+        temp = self.copy()
         for r in range(self.rows):
             for c in range(self.cols):
-                temp[r][c] = self[r][c] + other[r][c]
+                temp[r][c] += + other[r][c]
         return temp
     def __mul__(self, other):
-        if isinstance(other, Mat):
+        if isinstance(other, RealMatrix):
             if self.cols != other.rows:
                 raise ValueError
-            temp = Mat(self.rows, other.cols)
+            temp = zeros(self.rows, other.cols)
             for r in range(self.rows):
                 for c in range(other.cols):
                     v = ZERO
@@ -137,7 +191,7 @@ class Mat(object):
                     temp[r][c] = v
             return temp
         else:
-            temp = Mat(self.rows, self.cols)
+            temp = zeros(self.rows, self.cols)
             for r in range(self.rows):
                 for c in range(self.cols):
                     temp.set(self.get(r,c)*other, r, c)
@@ -145,17 +199,17 @@ class Mat(object):
     def __sub__(self, other):
         if self.rows != other.rows or self.cols != other.rows:
             return
-        temp = Mat(self.rows, self.cols)
+        temp = zeros(self.rows, self.cols)
         for r in range(self.rows):
             for c in range(self.cols):
-                temp[r][c] = self[r][c] - other[r][c]
+                temp[r][c] += self[r][c]
+                temp[r][c] -= other[r][c]
         return temp
     
     # swapping r1 and r2
     def row_swap(self, row1, row2):        
         for col in range(self.cols):
-            self[row1][col], self[row2][col] = self[row2][col]\
-                                                     , self[row1][col]
+            self[row1][col], self[row2][col] = self[row2][col], self[row1][col]
     # multiplying $row$ by factor
     def row_mul(self, row, factor):        
         for col in range(self.cols):
@@ -194,7 +248,7 @@ class Mat(object):
         p = 0
         for c in range(cols):
             r = p
-            for r in range(rows+1):
+            for r in range(p, rows+1):
                 if r == rows or temp[c][r] != ZERO:
                     r = r
                     break
@@ -240,15 +294,23 @@ class Mat(object):
             p = c
         return temp
     def inv(self):
-        pass
+        if self.rows != self.cols:
+            raise ValueError("Not a square matrix")
+        size = self.rows
+        temp = self.combine(eye(size), vert = False)
+        temp = temp.rref().slice(size, 2 * size)
+        return temp
 
 def zeros(m,n):
-    return Mat(m,n)
+    return RatMatrix(m,n)
 def eye(n):
-    temp = Mat(n,n)
+    temp = RatMatrix(n,n)
     for i in range(n):
         temp[i][i] = ONE
     return temp
+
+def combine(mat1, mat2, vert = False):
+    return mat1.combine(mat2, vert)
 
 def T(matrix):
     return matrix.T()
@@ -261,7 +323,7 @@ def inv(matrix):
 
 
 
-class Matrix(Mat):
+class Matrix(RatMatrix):
     def __init__(self, rows, cols):
         super().__init__(rows, cols)
         for row in range(self.rows):
@@ -279,7 +341,10 @@ class Matrix(Mat):
                     print("Please retry")
                     continue
                 for col in range(self.cols):
-                    self[row][col] = Rat(row_input[col])
+                    try:
+                        self[row][col] = Rat(row_input[col])
+                    except ValueError:
+                        self[row][col] = float(row_input[col])
                 repeat = False
             if is_break:
                 break
