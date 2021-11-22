@@ -14,7 +14,7 @@ class Rat(object):
                 self.num, self.den = arg, 1
         elif len(args) == 1:
             temp_num, temp_den = int(arg), int(args[0])
-            d = math.gcd(temp_num, temp_den)
+            d = gcd(temp_num, temp_den)
             if d:
                 self.num, self.den = temp_num//d, temp_den//d
                 if self.den < 0:
