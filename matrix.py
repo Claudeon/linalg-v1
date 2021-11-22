@@ -242,8 +242,8 @@ class Mat(object):
     def inv(self):
         pass
 
-def zeros(n):
-    return Mat(n,n)
+def zeros(m,n):
+    return Mat(m,n)
 def eye(n):
     temp = Mat(n,n)
     for i in range(n):
