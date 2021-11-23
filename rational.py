@@ -30,6 +30,8 @@ class Rat(object):
         return f'{self.num}/{self.den}'
     def __repr__(self):
         return str(self)
+    def __float__(self):
+        return self.num/self.den
 
     def __eq__(self, other):
         if isinstance(other, Rat):
