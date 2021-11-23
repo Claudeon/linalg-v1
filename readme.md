@@ -1,4 +1,4 @@
-# linalg-v1
+# linalg-v1.1
 Created specifically for Linear Algebra MA2001
 
 # Features
