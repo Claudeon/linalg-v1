@@ -134,44 +134,42 @@ class RatMatrix(RealMatrix):
         return temp
     
     # swapping r1 and r2
-    def row_swap(self, row1, row2):        
+    def row_swap(self, row1, row2, show = False):
+        if show or DEBUGMODE:
+            print(self, f'\n >>> R{row1+1} <> R{row2+1}')
         for col in range(self.cols):
             self[row1][col], self[row2][col] = self[row2][col], self[row1][col]
     # multiplying $row$ by factor
-    def row_mul(self, row, factor):        
+    def row_mul(self, row, factor, show = False):
+        if show or DEBUGMODE:
+            if float(factor) < 0:
+                print(self, f'\n >>> ({factor}) x R{row+1}')
+            else:
+                if factor == ONE:
+                    None
+                else:
+                    print(self, f'\n >>> {factor} x R{row+1}')
         for col in range(self.cols):
             self[row][col] = self[row][col]*factor
     # adding row2*factor to row1
-    def row_add(self, row1, row2, factor):  
+    def row_add(self, row1, row2, factor, show = False):
+        if show or DEBUGMODE:
+            if float(factor) < 0:
+                if ZERO - factor == ONE:
+                    print(self, f'\n >>> R{row1+1} - R{row2+1}')
+                else:
+                    print(self, f'\n >>> R{row1+1} - {ZERO - factor} x R{row2+1}')
+            else:
+                if factor == ONE:
+                    print(self, f'\n >>> R{row1+1} + R{row2+1}')
+                else:
+                    print(self, f'\n >>> R{row1+1} + {factor} x R{row2+1}')
         for col in range(self.cols):
             self[row1][col] = self[row1][col] + self[row2][col]*factor
-    
-    def ref(self):
-        temp = self.copy()
-        rows, cols = temp.rows, temp.cols
-        # c, p = 0, 0
-        # while c < cols:
-        #     r = p
-        #     while r < rows:
-        #         if temp[c][r] != ZERO:
-        #             break
-        #         r += 1
-        #     if r == rows:
-        #         c += 1
-        #         continue
-        #     if r != p:
-        #         temp.row_swap(p, r)
-        #     pivot_ele = temp[p][c]
-        #     for i in range(p+1, rows):
-        #         curr_ele = temp[i][c]
-        #         if curr_ele == ZERO:
-        #             continue
-        #         factor = ZERO - (curr_ele/pivot_ele)
-        #         temp.row_add(i, p, factor)   
-        #     p += 1
-        #     c += 1
-        # return temp
 
+    def ref_process(self, show = False):
+        temp = self.copy()
+        leading_tup, rows, cols = (), temp.rows, temp.cols
         p = 0
         for c in range(cols):
             r = p
@@ -182,43 +180,49 @@ class RatMatrix(RealMatrix):
             if r == rows:
                 continue
             if r != p:
-                print(temp, f'\n >>> R{p+1} <-> R{r+1}') if DEBUGMODE else None
-                temp.row_swap(p, r)
+                temp.row_swap(p, r, show = show)
             pivot_ele = temp[p][c]
             for i in range(p+1, rows):
                 curr_ele = temp[i][c]
                 if curr_ele == ZERO:
                     continue
                 factor = ZERO - (curr_ele/pivot_ele)
-                print(temp, f'\n >>> R{i+1} + {factor} X R{p+1}') if DEBUGMODE else None
-                temp.row_add(i, p, factor)
+                temp.row_add(i, p, factor, show = show)
+            leading_tup += ((p,c),)
             p += 1
-        return temp
-    def rref(self):
-        temp = self.ref()
-        rows, cols = temp.rows, temp.cols
+        return temp, leading_tup
+
+    # RREF Algorithm, assuming self is already in REF form
+    # Modifies matrix in place
+    def rref_process(self, show = False):
+        rows, cols = self.rows, self.cols
         r, p = rows-1,  cols
         for r in range(rows):
             r = (rows-1) - r
             c = 0
             for c in range(p+1):
-                if c == p or temp[r][c] != ZERO:
+                if c == p or self[r][c] != ZERO:
                     c = c
                     break
             if c == p:
                 continue
-            if temp[r][c] != ONE:
-                factor = ONE/temp[r][c]
-                print(temp, f'\n >>> R{r+1} X {factor}') if DEBUGMODE else None
-                temp.row_mul(r, factor)
+            if self[r][c] != ONE:
+                factor = ONE/self[r][c]
+                self.row_mul(r, factor, show = show)
             for i in range(0,r):
-                curr_ele = temp[i][c]
+                curr_ele = self[i][c]
                 if curr_ele == ZERO:
                     continue
                 factor = ZERO - curr_ele
-                print(temp, f'\n >>> R{i+1} + {factor} X R{r+1}') if DEBUGMODE else None
-                temp.row_add(i, r, factor)
+                self.row_add(i, r, factor, show = show)
             p = c
+        
+    
+    def ref(self, show = False):
+        return self.ref_process(show = show)[0]
+    def rref(self, show = False):
+        temp = self.ref_process(show = show)[0]
+        temp.rref_process(show = show)
         return temp
     def inv(self):
         if self.rows != self.cols:
@@ -230,7 +234,32 @@ class RatMatrix(RealMatrix):
     def det(self):
         pass
     def rank(self):
-        pass
+        return len(self.ref_process()[1])
+    def nullity(self):
+        return self.cols - self.rank()
+
+    def null(self):
+        rows, cols = self.rows, self.cols
+        temp, leading = self.ref_process()
+        npcols = tuple(filter(lambda x: x not in map(lambda x: x[1], leading), range(cols)))
+        rank, nullity = len(leading), len(npcols)
+        if nullity == 0:
+            return zeros(cols, 1)
+        temp.rref_process()
+        nullsp = zeros(cols, nullity)
+        count = 0
+        for c in npcols:
+            for pr, pc in leading:
+                if pc > c:
+                    break
+                nullsp[pc][count] = ZERO - temp[pr][c]
+            nullsp[c][count] = ONE
+            count += 1
+        return nullsp
+            
+                
+            
+            
 
 def zeros(m,n):
     return RatMatrix(m,n)
@@ -242,19 +271,25 @@ def eye(n):
 
 def combine(mat1, mat2, vert = False):
     return mat1.combine(mat2, vert)
+def augmented(mat1, mat2):
+    return mat1.combine(mat2, vert = False)
 
 def T(matrix):
     return matrix.T()
-def ref(matrix):
-    return matrix.ref()
-def rref(matrix):
-    return matrix.rref()
+def ref(matrix, show = False):
+    return matrix.ref(show = show)
+def rref(matrix, show = False):
+    return matrix.rref(show = show)
 def inv(matrix):
     return matrix.inv()
 def det(matrix):
     return matrix.det()
 def rank(matrix):
     return matrix.rank()
+def nullity(matrix):
+    return matrix.nullity()
+def null(matrix):
+    return matrix.null()
 
 
 class Matrix(RatMatrix):
