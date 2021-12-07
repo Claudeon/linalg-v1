@@ -8,7 +8,7 @@ Created specifically for Linear Algebra MA2001. Designed with the MA2001 student
 - Check if all the packages are successfully installed.
 
 ## Features
-- Initializing a matrix\\
+- Initializing a matrix\n
 There are two ways to initialize a matrix. One way is to assign the expression Matrix(m,n) to variable var where m is the number of rows and n is the number of columns. Then, type in the entries
 ```python
 # 1st approach: default assignment 
@@ -22,7 +22,7 @@ row 2: 1 3 2
         for j in range(6):
             A[i][j] = Rat(i+j)
 ```
-- ERO and ECO Operations
+- ERO and ECO Operations \n
 Three methods are available: mainly row_swap, row_add, and row_mul. The syntax is as follows:
 ```python
 # matrix variable name + dot + followed by method_name and arguments
