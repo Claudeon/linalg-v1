@@ -8,7 +8,7 @@ Created specifically for Linear Algebra MA2001. Designed with the MA2001 student
 - Check if all the packages are successfully installed.
 
 ## Features
-- Initializing a matrix
+- Initializing a matrix\\
 There are two ways to initialize a matrix. One way is to assign the expression Matrix(m,n) to variable var where m is the number of rows and n is the number of columns. Then, type in the entries
 ```python
 # 1st approach: default assignment 
