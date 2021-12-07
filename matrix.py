@@ -1,11 +1,17 @@
+#!/usr/bin/env python3
 from rational import *
 
 #### GLOBAL VARIABLES ####
+ZERO, ONE   = Rat(0), Rat(1)
+dec         = 0
+rat         = 1
+
+#### OPTION VARIABLES ####
 INPUT_TXT   = 2
 SPACING     = 9
 BREAK_CMD   = "break"
-ZERO, ONE   = Rat(0), Rat(1)
 DEBUGMODE   = False
+FORMAT      = rat
 
 class RealMatrix(object):
     pass
@@ -132,6 +138,15 @@ class RatMatrix(RealMatrix):
                 temp[r][c] += self[r][c]
                 temp[r][c] -= other[r][c]
         return temp
+
+    def __pow__(self, other):
+        if self.rows != self.cols:
+            return
+        temp = eye(self.rows)
+        for i in range(other):
+            temp = temp*self
+        return temp
+        
     
     # swapping r1 and r2
     def row_swap(self, row1, row2, show = False):
@@ -170,7 +185,7 @@ class RatMatrix(RealMatrix):
     def ref_process(self, show = False):
         temp = self.copy()
         leading_tup, rows, cols = (), temp.rows, temp.cols
-        p = 0
+        p, det_factor = 0, ONE
         for c in range(cols):
             r = p
             for r in range(p, rows+1):
@@ -181,6 +196,7 @@ class RatMatrix(RealMatrix):
                 continue
             if r != p:
                 temp.row_swap(p, r, show = show)
+                det_factor = det_factor * (-1)
             pivot_ele = temp[p][c]
             for i in range(p+1, rows):
                 curr_ele = temp[i][c]
@@ -190,7 +206,7 @@ class RatMatrix(RealMatrix):
                 temp.row_add(i, p, factor, show = show)
             leading_tup += ((p,c),)
             p += 1
-        return temp, leading_tup
+        return temp, leading_tup, det_factor
 
     # RREF Algorithm, assuming self is already in REF form
     # Modifies matrix in place
@@ -232,7 +248,14 @@ class RatMatrix(RealMatrix):
         temp = temp.rref().slice(size, 2 * size)
         return temp
     def det(self):
-        pass
+        if self.rows != self.cols:
+            raise ValueError("Not a square matrix")
+        temp, leading_tup, det_factor = self.ref_process()
+        diag_prod = det_factor
+        for idx in range(temp.rows):
+            diag_prod *= temp[idx][idx]
+        return diag_prod
+        
     def rank(self):
         return len(self.ref_process()[1])
     def nullity(self):
@@ -240,7 +263,7 @@ class RatMatrix(RealMatrix):
 
     def null(self):
         rows, cols = self.rows, self.cols
-        temp, leading = self.ref_process()
+        temp, leading = self.ref_process()[:-1]
         npcols = tuple(filter(lambda x: x not in map(lambda x: x[1], leading), range(cols)))
         rank, nullity = len(leading), len(npcols)
         if nullity == 0:
@@ -257,12 +280,39 @@ class RatMatrix(RealMatrix):
             count += 1
         return nullsp
             
-                
-            
-            
+class Matrix(RatMatrix):
+    def __init__(self, rows, cols):
+        super().__init__(rows, cols)
+        for row in range(self.rows):
+            repeat, is_break = True, False
+            txt = str(row) + (INPUT_TXT - len(str(row)))*" "
+            while repeat:
+                row_input = input(f'row {txt}: ')
+                if row_input == BREAK_CMD:
+                    is_break = True
+                    print("Breaking operation")
+                    break
+                row_input = tuple(row_input.split(" "))
+                row_input = tuple(filter(lambda x: x != "", row_input))
+                if len(row_input) != self.cols:
+                    print("Please retry")
+                    continue
+                for col in range(self.cols):
+                    try:
+                        self[row][col] = Rat(row_input[col])
+                    except ValueError:
+                        self[row][col] = float(row_input[col])
+                repeat = False
+            if is_break:
+                break
 
-def zeros(m,n):
-    return RatMatrix(m,n)
+
+
+
+def zeros(m,*n):
+    if not n:
+        return RatMatrix(m,m)
+    return RatMatrix(m,*n)
 def eye(n):
     temp = RatMatrix(n,n)
     for i in range(n):
@@ -292,30 +342,9 @@ def null(matrix):
     return matrix.null()
 
 
-class Matrix(RatMatrix):
-    def __init__(self, rows, cols):
-        super().__init__(rows, cols)
-        for row in range(self.rows):
-            repeat, is_break = True, False
-            txt = str(row) + (INPUT_TXT - len(str(row)))*" "
-            while repeat:
-                row_input = input(f'row {txt}: ')
-                if row_input == BREAK_CMD:
-                    is_break = True
-                    print("Breaking operation")
-                    break
-                row_input = tuple(row_input.split(" "))
-                row_input = tuple(filter(lambda x: x != "", row_input))
-                if len(row_input) != self.cols:
-                    print("Please retry")
-                    continue
-                for col in range(self.cols):
-                    try:
-                        self[row][col] = Rat(row_input[col])
-                    except ValueError:
-                        self[row][col] = float(row_input[col])
-                repeat = False
-            if is_break:
-                break
 
+def main():
+    print("Package successfully installed!")
 
+if __name__ == "__main__":
+    main()

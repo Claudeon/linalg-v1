@@ -1,4 +1,4 @@
-from math import *
+from math import gcd
 
 class Rat(object):
     def __init__(self, arg, *args):
@@ -74,3 +74,14 @@ class Rat(object):
             return (self.num/self.den) / other
         else:
             raise TypeError("other of unknown type")
+    def __pow__(self, other):
+        if isinstance(other, Rat) and float(other) == int(float(other)):
+            return self ** int(float(other))
+        elif isinstance(other, int):
+            if float(other) < 0:
+                return Rat(self.den**(-other), self.num**(-other))
+            else:
+                return Rat(self.num**other, self.den**other)
+        else:
+            raise TypeError("other of unknown type")
+            
