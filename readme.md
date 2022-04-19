@@ -50,6 +50,9 @@ None
 
 ```
 - Transposing matrix
+```python
+
+```
 - Finding RREF with Gauss-Jordan Elimination steps
 - Combining matrices with {augmented} and {combine}
 - Determinants and Inverse
