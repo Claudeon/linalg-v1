@@ -1,4 +1,4 @@
-# linalg-v1.1
+# MA2001-linalg-program
 Created specifically for Linear Algebra MA2001. Designed with the MA2001 student in mind.
 
 ## Instructions
